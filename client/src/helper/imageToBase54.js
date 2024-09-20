@@ -9,7 +9,7 @@ const imageToBase64= async (image)=>{
 
         reader.onerror= error => reject(error)
     })
-    return data;
+    return data; 
 }
 
 export default imageToBase64;
