@@ -1,12 +1,21 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import loginIcon from "../assest/signin.gif";
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa";
 import { Link } from 'react-router-dom';
+import { userSignIn } from "../services/user.service.js";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Context from "../context/index.js";
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const[data,setData]=useState({email:'',password:''})
-
+  const navigate=useNavigate()
+  const {fetchUserDetails,fetchCartProducts}=useContext(Context)
+  console.log("commonContext",fetchUserDetails);
+  
   const handleOnChange =(e)=>{
     const {name,value}=e.target;
     setData((prev)=>
@@ -17,9 +26,36 @@ const Login = () => {
         }
       }) 
     }
-
-   const handleSubmit=(e)=>{
+    const setAuthHeader = (token) => {
+      // Store the token in localStorage or sessionStorage
+      localStorage.setItem("token", token);
+  
+      // Set default Authorization header for all Axios requests
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+   const handleSubmit=async (e)=>{
     e.preventDefault();
+    console.log("Login data------",data);
+    try{
+      const login= await userSignIn(data)
+      if (login.data.success) {
+        // console.log("Manigaaj",login.data.data.userInfo.logIn.accessToken);
+        console.log("ManiGaaj",login.data);
+        
+        const token=login.data.data
+        // axios.defaults.headers.common["Authorization"] = token;
+        setAuthHeader(token);
+        toast.success(login.data.message);
+        fetchUserDetails();
+        fetchCartProducts();
+        navigate('/')
+      } else {
+        toast.error(login.data.error);
+      }
+    } catch (error) {
+      console.error(error.message);
+      toast.error(error.message);
+    }
    }
   
   return (

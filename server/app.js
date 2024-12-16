@@ -1,51 +1,50 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-require('./config/config');
+var createError = require("http-errors");
+var express = require("express");
+var path = require("path");
+var cookieParser = require("cookie-parser");
+var logger = require("morgan");
+require("./config/config");
 
-const models = require('./models');
-const passport = require('passport');
+const models = require("./models");
+const passport = require("passport");
 // const indexRouter = require('./routes/v1');
-const cryptoService = require('./services/crypto.service.js');
-const {to} = require('./global_functions.js');
+const cryptoService = require("./services/crypto.service.js");
+const { to } = require("./global_functions.js");
 var app = express();
-var cors = require('cors')
-
-
-
-
-
+var cors = require("cors");
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(logger("dev"));
+// app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 // require('./swagger');
 app.use(passport.initialize());
 const corsOptions = {
-  origin: 'http://localhost:3000',  // Allow the frontend origin
-  credentials: true  // Allow credentials (cookies, authorization headers, etc.)
+  origin: "http://localhost:3000", // Replace with the specific frontend origin
+  credentials: true, // Allow credentials (cookies, authentication)
 };
-app.use(cors(corsOptions))
-models.sequelize.authenticate().then(()=>{
-  console.log('connected to db',CONFIG.db_name);
-}).catch((err)=>{
-  console.log('not connected to db',err.message);
-});
-models.sequelize.sync({alter:true});
-console.log('environment', CONFIG.environment,"port",CONFIG.port);
-app.use(async function (req,res,next){
-  if(req && req.headers && req.headers.authorization){
-    [err,data] = await to(cryptoService.decrypt(req.headers.authorization));
-    req.headers.authorization =  data;
-    console.log('check123',req.headers.authorization);
+app.use(cors(corsOptions));
+models.sequelize
+  .authenticate()
+  .then(() => {
+    console.log("connected to db", CONFIG.db_name);
+  })
+  .catch((err) => {
+    console.log("not connected to db", err.message);
+  });
+models.sequelize.sync({ alter: true });
+console.log("environment", CONFIG.environment, "port", CONFIG.port);
+app.use(async function (req, res, next) {
+  if (req && req.headers && req.headers.authorization) {
+    [err, data] = await to(cryptoService.decrypt(req.headers.authorization));
+    req.headers.authorization = data;
+    // console.log("check123", req.headers.authorization);
   }
   next();
 });
@@ -69,21 +68,24 @@ app.use(function (req, res, next) {
 });
 
 app.use("/healthcheck", require("express-healthcheck")());
-app.use('/v1/user',require('./controllers/user/user.controller').router);
+app.use("/v1/user", require("./controllers/user/user.controller").router);
+app.use("/v1/product", require("./controllers/product/product.controller").router);
+app.use("/v1/cart", require("./controllers/user/cartProduct.controller.js").router);
+
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
-// 
+//
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = req.app.get("env") === "development" ? err : {};
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.render("error");
 });
 
 module.exports = app;

@@ -1,67 +1,56 @@
 import React, { useState } from "react";
 import loginIcon from "../assest/signin.gif";
-import { FaEye } from "react-icons/fa";
-import { FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import imageToBase64 from "../helper/imageToBase54";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import  {userSignUp}  from "../services/user.service.js";
+import { userSignUp } from "../services/user.service.js";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [otpVerify,setOtpVerify]=useState(false)
+  const [otpVerify, setOtpVerify] = useState(false);
   const [data, setData] = useState({
     firstName: "",
     lastName: "",
     dob: "",
     email: "",
     password: "",
-    profilePic: loginIcon,
+    profilePic: "",
     confirmPassword: "",
+    isAdmin: false,  // Initialize with false for Store Admin checkbox
   });
-  const navigate=useNavigate()
-  // const[profilePic,setProfilePic]=useState(loginIcon)
+  const navigate = useNavigate();
 
   const handleUploadPic = async (e) => {
     const file = e.target.files[0];
     const imagePic = await imageToBase64(file);
-    setData((prev) => {
-      return {
-        ...prev,
-        profilePic: imagePic,
-      };
-    });
+    setData((prev) => ({
+      ...prev,
+      profilePic: imagePic,
+    }));
   };
 
-  const handleOtpVerify=(e)=>{
-    // setOtpVerify((prev)=> !prev)
-    setOtpVerify(true)
-
-  }
-
   const handleOnChange = (e) => {
-    const { name, value } = e.target;
-    setData((prev) => {
-      return {
-        ...prev,
-        [name]: value,
-      };
-    });
+    const { name, value, type, checked } = e.target;
+    setData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value, // Update checkbox value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Entered");
+    console.log("Entered",data);
 
     if (data.password === data.confirmPassword) {
       try {
         const userData = await userSignUp(data);
         if (userData.data.success) {
-          let email= userData.data.data.createData.email
+          let email = userData.data.data.createData.email;
           localStorage.setItem('email', email);
           toast.success(userData.data.message);
-          navigate('/otp')
+          navigate('/otp');
         } else {
           toast.error(userData.data.error);
         }
@@ -73,18 +62,19 @@ const Signup = () => {
       toast.error("Password and confirm password didn't match");
     }
   };
+
   return (
     <section id="login">
       <div className="mx-auto container p-4">
         <div className="bg-white p-5 w-full max-w-sm mx-auto">
           <div className="w-20 h-20 mx-auto relative overflow-hidden rounded-full">
             <div>
-              <img src={data.profilePic} alt="logIn icon" />
+              <img src={loginIcon} alt="logIn icon" />
             </div>
             <form>
               <label>
                 <div className="text-xs bg-opacity-80 bg-slate-200 pb-4 pt-2 cursor-pointer text-center absolute bottom-0 w-full">
-                  upload photo
+                  Upload photo
                 </div>
                 <input
                   type="file"
@@ -125,30 +115,31 @@ const Signup = () => {
                 <input
                   type="date"
                   name="dob"
-                  placeholder="Enter Last Name"
+                  placeholder="Enter Date of Birth"
                   className="w-full h-full outline-none bg-transparent"
                   onChange={handleOnChange}
                   value={data.dob}
                 />
               </div>
-              <label> Email :</label>
+              <label>Email:</label>
               <div className="bg-slate-100 p-2">
                 <input
                   type="email"
                   name="email"
                   required
-                  placeholder="enter email"
+                  placeholder="Enter email"
                   className="w-full h-full outline-none bg-transparent"
                   onChange={handleOnChange}
                   value={data.email}
                 />
               </div>
             </div>
-            <label> Password :</label>
+
+            <label>Password:</label>
             <div className="bg-slate-100 p-2 flex">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="enter password"
+                placeholder="Enter password"
                 name="password"
                 required
                 className="w-full h-full outline-none bg-transparent"
@@ -157,28 +148,42 @@ const Signup = () => {
               />
               <div
                 className="cursor-pointer text-xl"
-                onClick={() => setShowPassword((preve) => !preve)}
+                onClick={() => setShowPassword((prev) => !prev)}
               >
                 <span>{showPassword ? <FaEyeSlash /> : <FaEye />}</span>
               </div>
             </div>
-            <label>Confirm Password :</label>
+
+            <label>Confirm Password:</label>
             <div className="bg-slate-100 p-2 flex">
               <input
                 type="password"
-                placeholder="enter password"
+                placeholder="Confirm password"
                 name="confirmPassword"
                 required
                 className="w-full h-full outline-none bg-transparent"
                 onChange={handleOnChange}
+                value={data.confirmPassword}
               />
             </div>
+
+            {/* Make Store Admin Checkbox */}
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isAdmin"
+                onChange={handleOnChange}
+                checked={data.isAdmin}
+              />
+              Make Store Admin
+            </label>
+
             <button className="bg-red-600 text-white w-full mt-6 px-6 py-3 max-w-[150px] rounded-full hover:scale-110 transition-all mx-auto block">
               Sign Up
             </button>
           </form>
           <p className="my-5">
-            Already have an account ?
+            Already have an account?
             <Link
               to={"/login"}
               className="text-red-600 hover:text-red-700 hover:underline"

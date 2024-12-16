@@ -4,7 +4,7 @@ const {TE,to} = require('../../global_functions.js');
 const bcrypt_p = require('bcrypt-promise');
 const jwt = require('jsonwebtoken');
 const cryptoService = require('../../services/crypto.service.js');
-const { type } = require('os');
+// const { type } = require('os');
 module.exports = (Sequelize, DataTypes) => {
     const user = Sequelize.define('user', {
         id: {
@@ -45,6 +45,10 @@ module.exports = (Sequelize, DataTypes) => {
         isDeleted:{
             type: DataTypes.BOOLEAN,
             defaultValue : false
+        },
+        isAdmin:{
+            type: DataTypes.BOOLEAN,
+            defaultValue : false
         }
     }, {
         tableName:'user',
@@ -53,11 +57,11 @@ module.exports = (Sequelize, DataTypes) => {
         timestamps:true,
         schema: "user"
     });
-    // user.associate= function(models)
-    //     {
-    //     console.log('models666',models);
-    //     this.diary = this.hasMany(models.diary,{foreignKey : 'userId'});
-    // } 
+    user.associate= function(models)
+        {
+        console.log('models666',models);
+        this.product = this.hasMany(models.product,{foreignKey : 'createdBy'});
+    } 
         
         user.beforeSave(async (user,options) => {
             let err;
@@ -84,7 +88,7 @@ module.exports = (Sequelize, DataTypes) => {
             },CONFIG.jwt_encryption,{expiresIn:CONFIG.jwt_expiration});
             [err,encryptedToken] = await to(cryptoService.encrypt(token));
             if(err) TE(err.message);
-            console.log('check123',encryptedToken);
+            // console.log('check123',encryptedToken);
              return encryptedToken;
         }
     return user;

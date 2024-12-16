@@ -2,14 +2,17 @@ import { useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import { userVerification } from '../services/user.service';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function Otp() {
     const inputRefs = useRef([]);
     const[otp,setOtp]=useState(Array(6).fill(''))
+    const location = useLocation();
+    const userEmail = location?.state?.userEmail
     const navigate= useNavigate()
     const handleChange = (e, index) => {
         const value = e.target.value;
+        console.log("userEmailuserEmailuserEmailuserEmailuserEmailuserEmail",userEmail)
         
         if (/^\d*$/.test(value)) {
             const newOtp = [...otp];
@@ -34,14 +37,17 @@ function Otp() {
     const handleOnClick= async ()=>{
         console.log("Onclick");
         
-        let email=localStorage.getItem('email')
-        console.log(email);
+        let email=localStorage.getItem('email') ? localStorage.getItem('email') : userEmail
+        console.log("EMAIL",userEmail);
         
         try{
        const verification= await userVerification({email,otp})
+       console.log("verificationverificationverification",verification);
+       
 
        if(verification.data){
         toast.success("Otp verified successfully")
+        localStorage.removeItem('email')
         navigate('/login')
        }  else{
             toast.error(verification.data.error)

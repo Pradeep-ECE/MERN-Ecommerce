@@ -2,5 +2,5 @@ require('./config')
 CONSTANT={};
 
 CONSTANT.SCHEMAS=[
-    'user'
+    'user','product','category'
 ];

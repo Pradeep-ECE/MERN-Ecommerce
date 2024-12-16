@@ -9,15 +9,23 @@ const apiUrl = `http://localhost:6001/v1/`;
  * @param {Object} params - Optional query parameters to include in the request URL.
  * @returns {Promise<any>} - A Promise that resolves with the response data.
  */
-export const getMethod = async (url, headers, params) => {
+export const getMethod = async (url, { headers, withCredentials }, params) => {
   try {
-    const response = await axios.get(apiUrl + `${url}`, {
+    console.log("Headers=====", headers);
+    console.log("Query Params:", params);
+    console.log(apiUrl+url+ params);
+    
+
+    const response = await axios.get(apiUrl + url, {
       headers: headers,
-      params: params,
+      params: params ? params : null,
+      withCredentials: withCredentials?withCredentials:null,
     });
     return response && response.data;
   } catch (error) {
-    throw error.response.data;
+    console.log(error.response);
+    
+    throw error;
   }
 };
 /**
@@ -28,19 +36,19 @@ export const getMethod = async (url, headers, params) => {
  * @param {any} data - The data payload to include in the request body.
  * @returns {Promise<any>} - A Promise that resolves with the response data.
  */
-export const postMethod = async (url, { headers }, data) => {
+export const postMethod = async (url, { headers, withCredentials }, data) => {
   try {
     console.log("post method", apiUrl + `${url}`, data);
-
     const response = await axios.post(apiUrl + `${url}`, data, {
       headers: headers,
-      ...(data.params && { params: data.params }),
+      // ...(data.params && { params: data.params }),
+      withCredentials: withCredentials || null,
     });
-    console.log("RESSSSSSSSSSSSSSSS", response);
+    console.log("REEEEESSSS", response);
 
     return response;
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
 
     throw error;
   }
@@ -53,10 +61,11 @@ export const postMethod = async (url, { headers }, data) => {
  * @param {any} data - The data payload to include in the request body.
  * @returns {Promise<any>} - A Promise that resolves with the response data.
  */
-export const putMethod = async (url, headers, data) => {
+export const putMethod = async (url, { headers, withCredentials }, data) => {
   try {
     const response = await axios.put(apiUrl + `${url}`, data, {
       headers: headers,
+      withCredentials: withCredentials || null,
     });
     return response && response.data;
   } catch (error) {

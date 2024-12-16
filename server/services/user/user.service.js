@@ -5,7 +5,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mailService = require("../mail.service.js");
 const CryptoJS = require("crypto-js");
-const user = require("../../models/user/user.js");
 
 let Otp={}
 
@@ -77,7 +76,7 @@ const userSignIn = async function (data) {
   );
   if (logInErr) return TE(logInErr.message);
   if (logInSuccess) {
-    console.log(logInSuccess);
+  if( logInSuccess.isVerified){
     const isPasswordMatch = await bcrypt.compare(
       password,
       logInSuccess.password
@@ -85,30 +84,40 @@ const userSignIn = async function (data) {
     if (isPasswordMatch) {
       let userInfo = {};
       console.log("Entered");
-      let token = getJWT(data, CONFIG.jwt_expiration);
-      userInfo["user"] = logInSuccess.dataValues;
+      const tokenData={
+        id: logInSuccess.id,
+        email: logInSuccess.email
+      }
+      console.log("tokenData----",tokenData);
+      
+      let token = getJWT(tokenData, CONFIG.jwt_encryption);
+      // userInfo["user"] = logInSuccess.dataValues;
       // ...logInSuccess.dataValues, // Spread the properties of dataValues into the user object
       // logIn: {
       //   accessToken: token
       // }          // Add the accessToken key with the value of token
-      userInfo = {
-        ...userInfo,
-        logIn: {
-          accessToken: token,
-        },
-      };
+      // userInfo = {
+      //   ...userInfo,
+      //   logIn: {
+      //     accessToken: token,
+      //   },
+      // };
 
-      return { userInfo };
+      return token;
     } else {
-      return { info: "invalid login credentials" };
+      return TE("invalid login credentials" )
     }
-  } else {
-    return { info: "User Not found" };
+  } else{
+    return TE("User Not Verified please contact the Admin")
+  }
+
+  } else if(!logInSuccess&& !logInErr) {
+    return TE ("User Not found" )
   }
 };
 
 const getJWT = function (user, key) {
-  console.log("Called");
+  console.log("Called",key);
   //convert a string to integer
   let expiration_time = parseInt(CONFIG.jwt_expiration);
   //return the signature for given payload and secretkey
@@ -142,9 +151,6 @@ const userVerification= async function(otp,email) {
   console.log("User Service",otp,email);
   console.log(Otp[email]== otp);
   console.log(Otp);
-  
-
-  
   if(Otp[email]== otp){
     let [error,data]= await to (User.update(
       {isVerified: true},
@@ -155,11 +161,13 @@ const userVerification= async function(otp,email) {
   
 }
 
-const getUser = async function () {
+const getCurrentUser = async function (user) {
   let [err, data] = await to(
-    User.findAll({
+    User.findOne({
       where: {
         isDeleted: false,
+        email: user.email,
+        id: user.id
       },
     })
   );
@@ -183,12 +191,33 @@ const deleteUser = async function (id) {
   if (err) return TE(err.message);
   return data;
 };
+
+const getAllUsers= async function(){
+  let[err,data]= await to(User.findAll(
+    { where: { isAdmin: false } }
+  ))
+  if (err) return TE(err.message);
+  return data;
+}
+
+const updateUser= async function(body){
+  let[err,data]= await to(User.update(
+    body,
+    { where: { id:body.id, isDeleted: false } }
+  ))
+  if (err) return TE(err.message);
+  return data;
+}
+
 module.exports = {
   userSignUp,
   userSignIn,
   decryptDetails,
   encryptDetails,
-  getUser,
+  getCurrentUser,
+  getAllUsers,
   deleteUser,
-  userVerification
+  userVerification,
+  updateUser,
+  sendOtp
 };
